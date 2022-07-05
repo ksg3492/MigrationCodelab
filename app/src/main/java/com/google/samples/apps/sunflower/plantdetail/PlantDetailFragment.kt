@@ -22,6 +22,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.material.MaterialTheme
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.ShareCompat
 import androidx.core.widget.NestedScrollView
@@ -43,24 +44,24 @@ import com.google.samples.apps.sunflower.viewmodels.PlantDetailViewModel
  */
 class PlantDetailFragment : Fragment() {
 
-    private val args: PlantDetailFragmentArgs by navArgs()
+    private val args : PlantDetailFragmentArgs by navArgs()
 
-    private val plantDetailViewModel: PlantDetailViewModel by viewModels {
+    private val plantDetailViewModel : PlantDetailViewModel by viewModels {
         InjectorUtils.providePlantDetailViewModelFactory(requireActivity(), args.plantId)
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+        inflater : LayoutInflater,
+        container : ViewGroup?,
+        savedInstanceState : Bundle?
+    ) : View {
         val binding = DataBindingUtil.inflate<FragmentPlantDetailBinding>(
             inflater, R.layout.fragment_plant_detail, container, false
         ).apply {
             viewModel = plantDetailViewModel
             lifecycleOwner = viewLifecycleOwner
             callback = object : Callback {
-                override fun add(plant: Plant?) {
+                override fun add(plant : Plant?) {
                     plant?.let {
                         hideAppBarFab(fab)
                         plantDetailViewModel.addPlantToGarden()
@@ -94,12 +95,23 @@ class PlantDetailFragment : Fragment() {
                 }
             )
 
-            composeView.setContent {
-            //Compose In!
-                MaterialTheme {
-                    PlantDetailDescription(plantDetailViewModel)
+            // Dispose the Composition when the view's LifecycleOwner
+            // is destroyed
+            composeView.apply {
+                setViewCompositionStrategy(
+                    //프래그먼트의 LifecycleOwner가 소멸되면 컴포지션을 삭제합니다.
+                    //https://developer.android.com/jetpack/compose/interop/interop-apis#composition-strategy
+                    ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+                )
+
+                setContent {
+                    //Compose In!
+                    MaterialTheme {
+                        PlantDetailDescription(plantDetailViewModel)
+                    }
                 }
             }
+
 
             toolbar.setNavigationOnClickListener { view ->
                 view.findNavController().navigateUp()
@@ -143,7 +155,7 @@ class PlantDetailFragment : Fragment() {
     // We want to turn this behavior off to hide the FAB when it is clicked.
     //
     // This is adapted from Chris Banes' Stack Overflow answer: https://stackoverflow.com/a/41442923
-    private fun hideAppBarFab(fab: FloatingActionButton) {
+    private fun hideAppBarFab(fab : FloatingActionButton) {
         val params = fab.layoutParams as CoordinatorLayout.LayoutParams
         val behavior = params.behavior as FloatingActionButton.Behavior
         behavior.isAutoHideEnabled = false
@@ -151,6 +163,6 @@ class PlantDetailFragment : Fragment() {
     }
 
     interface Callback {
-        fun add(plant: Plant?)
+        fun add(plant : Plant?)
     }
 }
